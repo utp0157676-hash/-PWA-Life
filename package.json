@@ -1,0 +1,20 @@
+{
+  "name": "pwa-life",
+  "version": "1.0.0",
+  "description": "PWA Life - Aplicación Web Progresiva orientada a la organización personal con soporte offline, Web App Manifest, Service Worker y Cache Storage.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "pwa",
+    "progressive-web-app",
+    "service-worker",
+    "cache-storage",
+    "offline-first",
+    "indexeddb",
+    "vanilla-js"
+  ],
+  "author": "PWA Life Project",
+  "license": "MIT"
+}

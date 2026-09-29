@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Life - Organización Personal</title>
+  
+  <!-- Metadatos de la PWA -->
+  <meta name="description" content="PWA Life es una aplicación web progresiva orientada a la organización personal con soporte offline, instalación y almacenamiento local.">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PWA Life">
+
+  <!-- Enlace al Web App Manifest -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Iconos y Favicons -->
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="alternate icon" type="image/png" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+  <!-- Hoja de Estilos -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. BANNER DE ESTADO OFFLINE
+       ========================================================================= -->
+  <aside id="offline-banner" class="offline-banner" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="1" y1="1" x2="23" y2="23"/>
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+      <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <line x1="12" y1="20" x2="12.01" y2="20"/>
+    </svg>
+    <span><strong>Modo sin conexión:</strong> Estás navegando con recursos de Cache Storage y persistencia local.</span>
+  </aside>
+
+  <!-- =========================================================================
+       2. ESTRUCTURA PRINCIPAL DE LA APLICACIÓN
+       ========================================================================= -->
+  <div class="app-layout">
+    
+    <!-- Telón de fondo para dispositivos móviles -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+    <!-- Barra lateral de navegación -->
+    <aside id="app-sidebar" class="app-sidebar" aria-label="Menú principal">
+      <div class="sidebar-header">
+        <img src="./icons/icon.svg" alt="Logo de PWA Life" class="app-brand-icon">
+        <div class="app-brand-info">
+          <h1>PWA Life</h1>
+          <p>Organización Personal</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-link active" data-view="dashboard">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Panel Principal</span>
+        </a>
+
+        <a href="#tasks" class="nav-link" data-view="tasks">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>Gestor de Tareas</span>
+        </a>
+
+        <a href="#notes" class="nav-link" data-view="notes">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span>Notas Personales</span>
+        </a>
+
+        <a href="#pwa-info" class="nav-link" data-view="pwa-info">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>Información PWA</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <!-- Botón de instalación dinámico capturado por 'beforeinstallprompt' -->
+        <div class="install-prompt-container">
+          <button type="button" class="btn-install-sidebar btn-trigger-install">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Instalar Aplicación</span>
+          </button>
+        </div>
+
+        <div class="sidebar-status-box">
+          <span style="color: #94a3b8;">Red:</span>
+          <div class="status-indicator network-status-badge status-online">
+            <span class="pulse-dot"></span>
+            <span class="network-status-text">Conectado</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="app-main">
+      
+      <!-- Barra superior -->
+      <header class="app-header">
+        <div class="header-left">
+          <button type="button" id="btn-toggle-menu" class="btn-menu-toggle" aria-label="Abrir menú de navegación">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="page-title">PWA Life</h2>
+        </div>
+
+        <div class="header-right">
+          <!-- Indicador visual del estado de conexión -->
+          <div class="badge-network network-status-badge status-online">
+            <span class="pulse-dot"></span>
+            <span class="network-status-text">Conectado</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Vistas de la Aplicación -->
+      <div class="view-container">
+
+        <!-- ===================================================================
+             VISTA 1: DASHBOARD (PANEL PRINCIPAL)
+             =================================================================== -->
+        <section id="view-dashboard" class="app-view active" aria-labelledby="heading-dashboard">
+          
+          <div class="dashboard-welcome">
+            <div class="welcome-text">
+              <h2 id="heading-dashboard">Bienvenido a PWA Life</h2>
+              <p>Tu asistente de organización personal progresivo. Diseñado con capacidades offline, persistencia local y soporte de instalación multiplataforma.</p>
+            </div>
+            <div class="welcome-actions">
+              <button type="button" class="btn btn-primary" onclick="TaskManager.openTaskModal()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Nueva Tarea</span>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="NotesManager.openNoteModal()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Nueva Nota</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas del sistema -->
+          <div class="metrics-grid">
+            <article class="metric-card metric-pending">
+              <div class="metric-icon-wrap">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div class="metric-info">
+                <span id="stat-pending-tasks" class="metric-value">0</span>
+                <span class="metric-label">Tareas Pendientes</span>
+              </div>
+            </article>
+
+            <article class="metric-card metric-completed">
+              <div class="metric-icon-wrap">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div class="metric-info">
+                <span id="stat-completed-tasks" class="metric-value">0</span>
+                <span class="metric-label">Tareas Completadas</span>
+              </div>
+            </article>
+
+            <article class="metric-card metric-notes">
+              <div class="metric-icon-wrap">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </div>
+              <div class="metric-info">
+                <span id="stat-total-notes" class="metric-value">0</span>
+                <span class="metric-label">Notas Registradas</span>
+              </div>
+            </article>
+
+            <article class="metric-card metric-urgent">
+              <div class="metric-icon-wrap">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <div class="metric-info">
+                <span id="stat-urgent-tasks" class="metric-value">0</span>
+                <span class="metric-label">Prioridad Alta</span>
+              </div>
+            </article>
+          </div>
+
+          <!-- Barra de Progreso -->
+          <div class="progress-card">
+            <div class="progress-header">
+              <span class="progress-title">Nivel de Cumplimiento de Tareas</span>
+              <span id="stat-progress-percent" class="progress-value">0%</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div id="stat-progress-bar" class="progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Columnas de resumen -->
+          <div class="dashboard-columns">
+            
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-header">
+                <h3 class="dashboard-panel-title">Tareas Próximas</h3>
+                <button type="button" class="btn-link-action" data-navigate="tasks">Ver todas</button>
+              </div>
+              <div id="dashboard-recent-tasks">
+                <!-- Se inyecta dinámicamente -->
+              </div>
+            </div>
+
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-header">
+                <h3 class="dashboard-panel-title">Notas Recientes</h3>
+                <button type="button" class="btn-link-action" data-navigate="notes">Ver todas</button>
+              </div>
+              <div id="dashboard-recent-notes">
+                <!-- Se inyecta dinámicamente -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VISTA 2: GESTOR DE TAREAS
+             =================================================================== -->
+        <section id="view-tasks" class="app-view" aria-labelledby="heading-tasks">
+          
+          <div class="view-header">
+            <div class="view-heading">
+              <h2 id="heading-tasks">Gestor de Tareas</h2>
+              <p>Organiza, prioriza y monitorea tus actividades diarias.</p>
+            </div>
+            <button type="button" id="btn-new-task" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Nueva Tarea</span>
+            </button>
+          </div>
+
+          <!-- Barra de controles y filtros -->
+          <div class="controls-bar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="task-search-input" class="search-input" placeholder="Buscar por título o descripción..." aria-label="Buscar tareas">
+            </div>
+
+            <div class="filter-group">
+              <button type="button" class="btn-filter task-filter-btn active" data-filter="all">Todas</button>
+              <button type="button" class="btn-filter task-filter-btn" data-filter="pending">Pendientes</button>
+              <button type="button" class="btn-filter task-filter-btn" data-filter="completed">Completadas</button>
+
+              <select id="task-priority-filter" class="select-filter" aria-label="Filtrar por prioridad">
+                <option value="all">Todas las prioridades</option>
+                <option value="alta">Prioridad Alta</option>
+                <option value="media">Prioridad Media</option>
+                <option value="baja">Prioridad Baja</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Contenedor dinámico de tareas -->
+          <div id="tasks-container" class="tasks-list">
+            <!-- Se renderiza desde tasks.js -->
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VISTA 3: BLOC DE NOTAS
+             =================================================================== -->
+        <section id="view-notes" class="app-view" aria-labelledby="heading-notes">
+          
+          <div class="view-header">
+            <div class="view-heading">
+              <h2 id="heading-notes">Bloc de Notas</h2>
+              <p>Almacena apuntes, fragmentos de código e ideas con disponibilidad sin conexión.</p>
+            </div>
+            <button type="button" id="btn-new-note" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Nueva Nota</span>
+            </button>
+          </div>
+
+          <!-- Barra de controles para notas -->
+          <div class="controls-bar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="note-search-input" class="search-input" placeholder="Buscar en títulos o contenido..." aria-label="Buscar notas">
+            </div>
+
+            <div class="filter-group">
+              <button type="button" class="btn-filter note-filter-btn active" data-category="all">Todas</button>
+              <button type="button" class="btn-filter note-filter-btn" data-category="Académico">Académico</button>
+              <button type="button" class="btn-filter note-filter-btn" data-category="Trabajo">Trabajo</button>
+              <button type="button" class="btn-filter note-filter-btn" data-category="Personal">Personal</button>
+              <button type="button" class="btn-filter note-filter-btn" data-category="Ideas">Ideas</button>
+            </div>
+          </div>
+
+          <!-- Contenedor dinámico de notas -->
+          <div id="notes-container" class="notes-grid">
+            <!-- Se renderiza desde notes.js -->
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VISTA 4: INFORMACIÓN PWA (PANEL TÉCNICO Y EVIDENCIAS)
+             =================================================================== -->
+        <section id="view-pwa-info" class="app-view" aria-labelledby="heading-pwa-info">
+          
+          <div class="pwa-hero-card">
+            <div class="pwa-hero-icon">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="pwa-hero-text">
+              <h3 id="heading-pwa-info">Diagnóstico Técnico y Arquitectura PWA</h3>
+              <p>Esta sección proporciona telemetría en tiempo real sobre el estado del Service Worker, Web App Manifest, Cache Storage y almacenamiento local para facilitar la verificación académica y captura de evidencias en DevTools.</p>
+            </div>
+          </div>
+
+          <!-- Rejilla de métricas técnicas -->
+          <div class="diagnostics-grid">
+            
+            <!-- Service Worker -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Service Worker</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Estado:</span>
+                  <span id="diag-sw-status" class="status-badge badge-active">Consultando...</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Alcance (Scope):</span>
+                  <span id="diag-sw-scope" class="diag-value">./</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Archivo fuente:</span>
+                  <span class="diag-value">/sw.js</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Web App Manifest -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                <span>Web App Manifest</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Archivo:</span>
+                  <span id="diag-manifest-status" class="status-badge badge-active">manifest.json</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Display Mode:</span>
+                  <span class="diag-value">standalone</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Iconos definidos:</span>
+                  <span class="diag-value">192x192, 512x512, maskable</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Conexión de Red -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                  <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                  <line x1="12" y1="20" x2="12.01" y2="20"/>
+                </svg>
+                <span>Conectividad de Red</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Estado Actual:</span>
+                  <span id="diag-network-status" class="status-badge badge-active">Online</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">API del Navegador:</span>
+                  <span class="diag-value">navigator.onLine</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Comportamiento:</span>
+                  <span class="diag-value">Respuesta desde Cache en Offline</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Instalabilidad -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Instalabilidad PWA</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Elegibilidad:</span>
+                  <span id="diag-install-status" class="status-badge badge-neutral">Comprobando...</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Modo Actual:</span>
+                  <span id="diag-display-mode" class="diag-value">Pestaña de Navegador</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Almacenamiento Local -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+                <span>Almacenamiento de Datos</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Motor Principal:</span>
+                  <span id="diag-storage-engine" class="diag-value">IndexedDB</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Cuota Estimada:</span>
+                  <span id="diag-storage-usage" class="diag-value">Calculando...</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Cache Storage -->
+            <article class="diag-card">
+              <div class="diag-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                  <line x1="6" y1="6" x2="6.01" y2="6"/>
+                  <line x1="6" y1="18" x2="6.01" y2="18"/>
+                </svg>
+                <span>Cache Storage API</span>
+              </div>
+              <div class="diag-body">
+                <div class="diag-row">
+                  <span class="diag-label">Caché Activa:</span>
+                  <span id="diag-cache-name" class="diag-value">pwa-life-cache-v1.0.0</span>
+                </div>
+                <div class="diag-row">
+                  <span class="diag-label">Archivos almacenados:</span>
+                  <span id="diag-cache-count" class="diag-value">Consultando...</span>
+                </div>
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Acciones de diagnóstico y prueba -->
+          <div style="margin-bottom: 28px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="PWAManager.forceUpdate()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              <span>Comprobar Actualización de Caché</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-trigger-install">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Probar Instalación</span>
+            </button>
+          </div>
+
+          <!-- Tabla de verificación para informe académico -->
+          <div class="academic-panel">
+            <h4>Matriz de Características PWA Demostrables</h4>
+            <div class="academic-table-wrap">
+              <table class="academic-table">
+                <thead>
+                  <tr>
+                    <th>Característica PWA</th>
+                    <th>Tecnología / Implementación</th>
+                    <th>Cómo verificar en DevTools</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Web App Manifest</strong></td>
+                    <td><span class="code-badge">manifest.json</span> (metadatos, iconos, start_url)</td>
+                    <td>Pestaña <em>Application &gt; Manifest</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Service Worker</strong></td>
+                    <td><span class="code-badge">sw.js</span> (install, activate, fetch)</td>
+                    <td>Pestaña <em>Application &gt; Service Workers</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cache Storage</strong></td>
+                    <td><span class="code-badge">Cache API</span> (Precacheo del App Shell)</td>
+                    <td>Pestaña <em>Application &gt; Storage &gt; Cache Storage</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Modo Offline</strong></td>
+                    <td>Intercepción Fetch + Fallback a Caché</td>
+                    <td>Pestaña <em>Network &gt; Throttling &gt; Offline</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Almacenamiento Local</strong></td>
+                    <td><span class="code-badge">IndexedDB</span> (<span class="code-badge">localStorage</span> fallback)</td>
+                    <td>Pestaña <em>Application &gt; IndexedDB &gt; pwa_life_database</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Instalabilidad</strong></td>
+                    <td><span class="code-badge">beforeinstallprompt</span> + standalone mode</td>
+                    <td>Barra de direcciones / Botón <em>Instalar</em></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Diseño Responsivo</strong></td>
+                    <td>CSS Grid, Flexbox, Media Queries (<span class="code-badge">@media</span>)</td>
+                    <td>Modo <em>Device Toggle</em> (Ctrl+Shift+M)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- =========================================================================
+       3. MODAL: CREAR / EDITAR TAREA
+       ========================================================================= -->
+  <div id="task-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="task-modal-title">Crear Nueva Tarea</h3>
+        <button type="button" id="btn-close-task-modal" class="btn-close-modal" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="task-form">
+        <div class="modal-body">
+          <input type="hidden" id="task-id">
+
+          <div class="form-group">
+            <label for="task-title">Título de la tarea *</label>
+            <input type="text" id="task-title" class="form-input" placeholder="Ej: Realizar prueba offline de la PWA" required maxlength="100">
+          </div>
+
+          <div class="form-group">
+            <label for="task-description">Descripción</label>
+            <textarea id="task-description" class="form-textarea" placeholder="Detalles de la tarea o pasos a seguir..." rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-priority">Prioridad</label>
+              <select id="task-priority" class="form-select">
+                <option value="baja">Baja</option>
+                <option value="media" selected>Media</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="task-due-date">Fecha Límite</label>
+              <input type="date" id="task-due-date" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-task" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       4. MODAL: CREAR / EDITAR NOTA
+       ========================================================================= -->
+  <div id="note-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="note-modal-title">Crear Nueva Nota</h3>
+        <button type="button" id="btn-close-note-modal" class="btn-close-modal" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="note-form">
+        <div class="modal-body">
+          <input type="hidden" id="note-id">
+
+          <div class="form-group">
+            <label for="note-title">Título de la nota *</label>
+            <input type="text" id="note-title" class="form-input" placeholder="Ej: Resumen de Web App Manifest" required maxlength="100">
+          </div>
+
+          <div class="form-group">
+            <label for="note-category">Categoría</label>
+            <select id="note-category" class="form-select">
+              <option value="Académico">Académico</option>
+              <option value="Trabajo">Trabajo</option>
+              <option value="Personal" selected>Personal</option>
+              <option value="Ideas">Ideas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="note-content">Contenido de la nota *</label>
+            <textarea id="note-content" class="form-textarea" placeholder="Escribe el texto de tu apunte..." rows="5" required></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-note" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Nota</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       5. CONTENEDOR DE NOTIFICACIONES TOAST
+       ========================================================================= -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- =========================================================================
+       6. SCRIPTS MODULARES
+       ========================================================================= -->
+  <script src="./js/storage.js"></script>
+  <script src="./js/tasks.js"></script>
+  <script src="./js/notes.js"></script>
+  <script src="./js/pwa.js"></script>
+  <script src="./js/app.js"></script>
+
+</body>
+</html>

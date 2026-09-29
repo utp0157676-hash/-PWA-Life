@@ -1,0 +1,88 @@
+{
+  "name": "PWA Life - Organización Personal",
+  "short_name": "PWA Life",
+  "description": "PWA Life es una aplicación web progresiva orientada a la organización personal. Permite administrar tareas y notas desde una interfaz responsiva que puede instalarse en dispositivos compatibles y continuar ofreciendo determinadas funcionalidades cuando no existe conexión a Internet.",
+  "id": "pwa-life-personal-organizer",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": [
+    "productivity",
+    "utilities",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Gestionar Tareas",
+      "short_name": "Tareas",
+      "description": "Acceder rápidamente al administrador de tareas",
+      "url": "./index.html#tasks",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Bloc de Notas",
+      "short_name": "Notas",
+      "description": "Consultar o escribir notas personales",
+      "url": "./index.html#notes",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Estado Técnico PWA",
+      "short_name": "PWA Info",
+      "description": "Verificar métricas y estado del Service Worker",
+      "url": "./index.html#pwa-info",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
