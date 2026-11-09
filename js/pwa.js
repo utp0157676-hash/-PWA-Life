@@ -76,6 +76,12 @@ const PWAManager = (() => {
    * 2. DETECCIÓN DE RED (ONLINE / OFFLINE)
    */
   function _bindNetworkEvents() {
+    window.addEventListener('sync-status', ({ detail }) => {
+      _updateNetworkUI(detail.available);
+      document.querySelectorAll('.network-status-text').forEach(el => {
+        el.textContent = detail.available ? 'Servidor conectado' : 'Modo local';
+      });
+    });
     // Sincronizar estado inicial
     _updateNetworkUI(navigator.onLine);
 

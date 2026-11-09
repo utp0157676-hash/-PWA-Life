@@ -121,18 +121,23 @@ const NotesManager = (() => {
       App.showToast(isEdit ? 'Nota actualizada exitosamente' : 'Nota guardada exitosamente', 'success');
     } catch (err) {
       console.error('Error al guardar la nota:', err);
-      App.showToast('Error al persistir la nota', 'error');
+      App.showToast(err.message || 'Error al persistir la nota', 'error');
     }
   }
 
   async function deleteNote(id) {
     if (!confirm('¿Estás seguro de que deseas eliminar esta nota?')) return;
 
-    await StorageEngine.deleteNote(id);
-    await loadNotes();
-    renderNotes();
-    App.updateDashboardStats();
-    App.showToast('Nota eliminada correctamente', 'info');
+    try {
+      await StorageEngine.deleteNote(id);
+      await loadNotes();
+      renderNotes();
+      App.updateDashboardStats();
+      App.showToast('Nota eliminada correctamente', 'info');
+    } catch (err) {
+      console.error('Error al eliminar la nota:', err);
+      App.showToast('Error al eliminar la nota', 'error');
+    }
   }
 
   function openNoteModal(note = null) {
@@ -199,20 +204,21 @@ const NotesManager = (() => {
 
     notesContainer.innerHTML = filtered.map((note) => {
       const formattedDate = _formatTimestamp(note.createdAt);
+      const color = /^#[0-9a-f]{6}$/i.test(note.colorTag) ? note.colorTag : '#3b82f6';
       return `
-        <article class="note-card" style="border-top: 4px solid ${note.colorTag || '#3b82f6'}">
+        <article class="note-card" style="border-top: 4px solid ${color}">
           <div class="note-header">
-            <span class="badge badge-category" style="background-color: ${note.colorTag}1a; color: ${note.colorTag}; border: 1px solid ${note.colorTag}33;">
+            <span class="badge badge-category" style="background-color: ${color}1a; color: ${color}; border: 1px solid ${color}33;">
               ${_escapeHtml(note.category)}
             </span>
             <div class="note-actions">
-              <button class="btn-action edit" title="Editar Nota" onclick="NotesManager.editNote('${note.id}')" aria-label="Editar">
+              <button class="btn-action edit" title="Editar Nota" data-action="note-edit" data-record-id="${_escapeHtml(String(note.id))}" aria-label="Editar">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
-              <button class="btn-action delete" title="Eliminar Nota" onclick="NotesManager.deleteNote('${note.id}')" aria-label="Eliminar">
+              <button class="btn-action delete" title="Eliminar Nota" data-action="note-delete" data-record-id="${_escapeHtml(String(note.id))}" aria-label="Eliminar">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>

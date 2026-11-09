@@ -38,7 +38,15 @@ const server = http.createServer((req, res) => {
   }
 
   // Decodificar ruta
-  const decodedPath = decodeURIComponent(safeUrl);
+  let decodedPath;
+  try { decodedPath = decodeURIComponent(safeUrl); }
+  catch { res.writeHead(400); res.end('Ruta inválida'); return; }
+  // This server only serves the public app shell; PHP must run through Apache.
+  if (!/^\/(?:index\.html|manifest\.json|sw\.js|(?:js|css|icons)\/[a-zA-Z0-9_.-]+)$/.test(decodedPath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Recurso no disponible. La API PHP requiere Apache/XAMPP.');
+    return;
+  }
   let filePath = path.join(BASE_DIR, decodedPath);
 
   // Normalizar ruta para evitar salir del directorio base
@@ -88,7 +96,6 @@ const server = http.createServer((req, res) => {
     // Cabeceras recomendadas para desarrollo y pruebas de PWA
     const headers = {
       'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*',
       // Evitar que el navegador almacene en HTTP Cache el Service Worker para facilitar pruebas
       'Cache-Control': ext === '.js' && path.basename(filePath) === 'sw.js' 
         ? 'no-cache, no-store, must-revalidate' 

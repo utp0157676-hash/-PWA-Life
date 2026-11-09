@@ -1,5 +1,24 @@
 # Dependencias y logs
 node_modules/
+backend/config/database.local.php
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local.php
+*.pem
+*.key
+credentials.json
+secrets.json
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+tmp/
+temp/
+test-results/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

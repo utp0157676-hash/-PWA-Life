@@ -26,8 +26,9 @@
  */
 
 // Nombre y versión de la caché. Al cambiar esta versión, se invalida la caché previa.
-const CACHE_VERSION = 'v1.0.0';
-const CACHE_NAME = `pwa-life-cache-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v2.0.0';
+const CACHE_PREFIX = `pwa-life-${self.location.pathname.replace(/[^a-z0-9]/gi, '-')}-`;
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 // Lista de recursos esenciales que componen el "App Shell" de la aplicación.
 // Estos recursos son descargados y almacenados durante la fase de instalación.
@@ -40,6 +41,8 @@ const ASSETS_TO_CACHE = [
   './js/tasks.js',
   './js/notes.js',
   './js/storage.js',
+  './js/api.js',
+  './js/sync.js',
   './js/pwa.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -73,6 +76,7 @@ self.addEventListener('install', (event) => {
       })
       .catch((error) => {
         console.error('[Service Worker] Falló el pre-caching durante la instalación:', error);
+        throw error;
       })
   );
 });
@@ -94,7 +98,7 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cache) => {
             // Si el nombre de la caché no coincide con la versión actual, se elimina
-            if (cache !== CACHE_NAME) {
+            if ((cache.startsWith(CACHE_PREFIX) || cache.startsWith('pwa-life-cache-')) && cache !== CACHE_NAME) {
               console.log(`[Service Worker] Purgando caché obsoleta: ${cache}`);
               return caches.delete(cache);
             }
@@ -141,6 +145,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Only app-shell URLs may enter Cache Storage, never API/configuration data.
+  const allowed = ASSETS_TO_CACHE.map(path => new URL(path, self.registration.scope).pathname);
+  if (!allowed.includes(url.pathname) || url.search) return;
+
   // 1. Manejo especial de navegación (cargar la página HTML)
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -159,7 +167,7 @@ self.addEventListener('fetch', (event) => {
           // Si falló la red (offline), devolvemos index.html desde la caché
           console.log('[Service Worker] Offline detectado: Sirviendo index.html desde Cache Storage');
           return caches.match('./index.html').then((cachedIndex) => {
-            return cachedIndex || caches.match('/');
+            return cachedIndex || caches.match(new URL('./', self.registration.scope).href);
           });
         })
     );

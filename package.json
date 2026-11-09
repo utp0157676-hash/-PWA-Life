@@ -4,7 +4,9 @@
   "description": "PWA Life - Aplicación Web Progresiva orientada a la organización personal con soporte offline, Web App Manifest, Service Worker y Cache Storage.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "test:api": "node scripts/verify-api.mjs"
   },
   "keywords": [
     "pwa",

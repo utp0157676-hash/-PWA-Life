@@ -31,6 +31,15 @@ const App = (() => {
     _bindNavigation();
     _bindGlobalModals();
     _bindMobileSidebar();
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-action][data-record-id]');
+      if (!target) return;
+      const actions = {
+        'task-toggle': TaskManager.toggleTaskStatus, 'task-edit': TaskManager.editTask,
+        'task-delete': TaskManager.deleteTask, 'note-edit': NotesManager.editNote, 'note-delete': NotesManager.deleteNote
+      };
+      actions[target.dataset.action]?.(target.dataset.recordId);
+    });
 
     // 5. Detectar ruta por hash inicial (p. ej., desde acceso directo del Manifest)
     _handleHashChange();
@@ -38,6 +47,57 @@ const App = (() => {
 
     // 6. Actualizar métricas del Dashboard
     updateDashboardStats();
+
+    const syncPanel = document.createElement('div');
+    syncPanel.className = 'sync-panel';
+    syncPanel.innerHTML = '<span role="status" id="sync-message">Comprobando MySQL…</span> <button type="button" class="btn-sm btn-outline" id="sync-retry">Sincronizar</button> <button type="button" class="btn-sm btn-outline" id="sync-resolve" hidden>Resolver</button>';
+    document.body.appendChild(syncPanel);
+    const exportButton = document.createElement('button');
+    exportButton.className = 'btn-sm btn-outline';
+    exportButton.textContent = 'Exportar';
+    exportButton.addEventListener('click', async () => {
+      try {
+        const backup = { tasks: await StorageEngine.rawAll('tasks'), notes: await StorageEngine.rawAll('notes') };
+        const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+        const anchor = document.createElement('a');
+        anchor.href = url; anchor.download = 'pwa-life-respaldo.json'; anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (error) { showToast(error.message, 'error'); }
+    });
+    const importButton = document.createElement('button');
+    importButton.className = 'btn-sm btn-outline';
+    importButton.textContent = 'Importar';
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'application/json,.json'; input.hidden = true;
+    importButton.addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+      try {
+        if (!input.files[0]) return;
+        const count = await SyncEngine.importBackup(JSON.parse(await input.files[0].text()));
+        showToast(`${count} registros importados localmente; se confirmarán en MySQL. IDs locales existentes conservados.`, 'info');
+      } catch (error) { showToast(error.message, 'error'); }
+      input.value = '';
+    });
+    syncPanel.append(exportButton, importButton, input);
+    document.getElementById('sync-retry').addEventListener('click', () => SyncEngine.sync());
+    document.getElementById('sync-resolve').addEventListener('click', async () => {
+      if (!confirm('Se guardarán tus ediciones en conflicto como copias nuevas. Las eliminaciones en conflicto se cancelarán y se conservará la versión del servidor. ¿Continuar?')) return;
+      try { await SyncEngine.resolveCopies(); }
+      catch (error) { showToast(error.message, 'error'); }
+    });
+    window.addEventListener('sync-status', ({ detail }) => {
+      document.getElementById('sync-message').textContent = `${detail.message} Pendientes: ${detail.pending}.`;
+      document.getElementById('sync-resolve').hidden = !detail.conflicts;
+    });
+    window.addEventListener('data-synced', async () => {
+      try {
+        await Promise.all([TaskManager.loadTasks(), NotesManager.loadNotes()]);
+        TaskManager.renderTasks();
+        NotesManager.renderNotes();
+        updateDashboardStats();
+      } catch (error) { showToast(error.message, 'error'); }
+    });
+    SyncEngine.start();
 
     console.log('[App] PWA Life inicializada y lista.');
   }
@@ -170,12 +230,12 @@ const App = (() => {
       } else {
         recentTasksContainer.innerHTML = pendingTasks.map((t) => `
           <div class="dashboard-task-item">
-            <span class="priority-dot priority-${t.priority}"></span>
+            <span class="priority-dot priority-${['alta','media','baja'].includes(t.priority) ? t.priority : 'media'}"></span>
             <div class="task-info">
               <span class="task-name">${_escape(t.title)}</span>
-              <span class="task-sub">${t.dueDate ? `Vence: ${t.dueDate}` : 'Sin fecha'}</span>
+              <span class="task-sub">${t.dueDate ? `Vence: ${_escape(t.dueDate)}` : 'Sin fecha'}</span>
             </div>
-            <button class="btn-sm btn-outline" onclick="TaskManager.toggleTaskStatus('${t.id}')">
+            <button class="btn-sm btn-outline" data-action="task-toggle" data-record-id="${_escape(String(t.id))}">
               Completar
             </button>
           </div>
@@ -193,8 +253,8 @@ const App = (() => {
         `;
       } else {
         recentNotesContainer.innerHTML = topNotes.map((n) => `
-          <div class="dashboard-note-item" onclick="NotesManager.editNote('${n.id}')">
-            <div class="note-color-stripe" style="background-color: ${n.colorTag || '#3b82f6'}"></div>
+          <div class="dashboard-note-item" data-action="note-edit" data-record-id="${_escape(String(n.id))}">
+            <div class="note-color-stripe" style="background-color: ${/^#[0-9a-f]{6}$/i.test(n.colorTag) ? n.colorTag : '#3b82f6'}"></div>
             <div class="note-info">
               <span class="note-name">${_escape(n.title)}</span>
               <span class="note-snippet">${_escape(n.content.substring(0, 60))}${n.content.length > 60 ? '...' : ''}</span>
