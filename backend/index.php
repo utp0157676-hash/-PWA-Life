@@ -6,6 +6,10 @@ require __DIR__ . '/config/database.php';
 require __DIR__ . '/helpers/Validator.php';
 require __DIR__ . '/models/Record.php';
 require __DIR__ . '/controllers/RecordController.php';
+require __DIR__ . '/helpers/TaskSchedule.php';
+require __DIR__ . '/services/ReminderService.php';
+require __DIR__ . '/controllers/NotificationController.php';
+require __DIR__ . '/config/push.php';
 $db = null;
 try {
     $method = $_SERVER['REQUEST_METHOD'];
@@ -28,6 +32,10 @@ try {
         $body = (array)$object;
     }
     $path = trim($_GET['route'] ?? '', '/');
+    if (str_starts_with($path, 'notifications/')) {
+        $db = database();
+        (new NotificationController($db))->handle(substr($path, 14), $method, $body);
+    }
     if ($path === 'health' && $method === 'GET') {
         $db = database();
         $db->query('SELECT id FROM tasks LIMIT 0');

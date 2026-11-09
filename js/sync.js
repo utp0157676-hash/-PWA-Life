@@ -8,7 +8,7 @@ const SyncEngine = (() => {
   let started = false;
   let status = { available: false, pending: 0, conflicts: 0, message: 'Comprobando servidor…' };
   const fields = {
-    tasks: ['id','title','description','priority','dueDate','completed','createdAt','updatedAt'],
+    tasks: ['id','title','description','priority','dueDate','completed','createdAt','updatedAt','dueTime','dueAt','timeZone','reminderMinutes','notificationsEnabled','snoozedUntil'],
     notes: ['id','title','content','category','colorTag','createdAt','updatedAt']
   };
   const token = () => crypto.randomUUID();
@@ -43,6 +43,7 @@ const SyncEngine = (() => {
       await counts();
       announce('Guardado en este dispositivo; pendiente de confirmar en MySQL.');
     });
+    window.dispatchEvent(new Event('tasks-changed'));
     void sync();
   }
   async function cycle() {

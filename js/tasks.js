@@ -114,6 +114,7 @@ const TaskManager = (() => {
     const description = document.getElementById('task-description').value.trim();
     const priority = document.getElementById('task-priority').value;
     const dueDate = document.getElementById('task-due-date').value;
+    const dueTime = document.getElementById('task-due-time').value;
 
     if (!title) {
       App.showToast('El título de la tarea es obligatorio', 'error');
@@ -122,6 +123,14 @@ const TaskManager = (() => {
 
     const isEdit = Boolean(taskId);
     const existingTask = isEdit ? tasks.find((t) => t.id === taskId) : null;
+    let dueAt = null;
+    let timeZone = null;
+    if (dueTime) {
+      if (!dueDate) { App.showToast('Selecciona una fecha para la hora de vencimiento.', 'error'); return; }
+      timeZone = existingTask?.dueDate === dueDate && existingTask?.dueTime === dueTime ? existingTask.timeZone : Intl.DateTimeFormat().resolvedOptions().timeZone;
+      try { dueAt = existingTask?.dueDate === dueDate && existingTask?.dueTime === dueTime ? existingTask.dueAt : NotificationCore.iso(NotificationCore.wallTime(dueDate,dueTime,timeZone)); }
+      catch(error) { App.showToast(error.message,'error'); return; }
+    }
 
     const taskData = {
       id: isEdit ? taskId : `task-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -129,6 +138,12 @@ const TaskManager = (() => {
       description,
       priority: priority || 'media',
       dueDate: dueDate || null,
+      dueTime: dueTime || null,
+      dueAt,
+      timeZone,
+      reminderMinutes: document.getElementById('task-reminder').value === '' ? null : Number(document.getElementById('task-reminder').value),
+      notificationsEnabled: document.getElementById('task-notifications').checked,
+      snoozedUntil: existingTask?.dueAt === dueAt ? existingTask?.snoozedUntil || null : null,
       completed: existingTask ? existingTask.completed : false,
       createdAt: existingTask ? existingTask.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -202,14 +217,18 @@ const TaskManager = (() => {
       document.getElementById('task-description').value = task.description || '';
       document.getElementById('task-priority').value = task.priority;
       document.getElementById('task-due-date').value = task.dueDate || '';
+      document.getElementById('task-due-time').value = task.dueTime || '';
+      document.getElementById('task-reminder').value = task.reminderMinutes ?? '';
+      document.getElementById('task-notifications').checked = task.notificationsEnabled !== false;
     } else {
       modalTitle.textContent = 'Crear Nueva Tarea';
       document.getElementById('task-id').value = '';
       // Fecha predeterminada de hoy
-      document.getElementById('task-due-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('task-due-date').value = NotificationCore.dateInZone(Date.now(), Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
 
     taskModal.classList.add('active');
+    document.getElementById('task-time-zone').textContent = 'Zona horaria: ' + (task?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone) + '. Sin hora, se conserva como fecha de calendario.';
   }
 
   function closeTaskModal() {
@@ -265,7 +284,7 @@ const TaskManager = (() => {
       const priorityClass = `priority-${priority}`;
       const priorityLabel = priority.charAt(0).toUpperCase() + priority.slice(1);
       const isCompleted = task.completed;
-      const formattedDate = task.dueDate ? _formatDate(task.dueDate) : 'Sin fecha límite';
+      const formattedDate = task.dueAt ? new Date(task.dueAt).toLocaleString('es-MX', { dateStyle:'medium', timeStyle:'short' }) : (task.dueDate ? _formatDate(task.dueDate) : 'Sin fecha límite');
 
       return `
         <article class="task-card ${isCompleted ? 'completed' : ''}" data-id="${_escapeHtml(String(task.id))}">

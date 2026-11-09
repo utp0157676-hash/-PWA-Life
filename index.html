@@ -140,6 +140,10 @@
         </div>
 
         <div class="header-right">
+          <button type="button" id="notification-bell" class="notification-bell" aria-label="Abrir centro de notificaciones" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <span id="notification-count" class="notification-count" hidden>0</span>
+          </button>
           <!-- Indicador visual del estado de conexión -->
           <div class="badge-network network-status-badge status-online">
             <span class="pulse-dot"></span>
@@ -650,6 +654,20 @@
               <input type="date" id="task-due-date" class="form-input">
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-due-time">Hora de vencimiento (opcional)</label>
+              <input type="time" id="task-due-time" class="form-input" step="60" aria-describedby="task-time-zone">
+            </div>
+            <div class="form-group">
+              <label for="task-reminder">Recordatorio</label>
+              <select id="task-reminder" class="form-select">
+                <option value="">Usar configuración general</option><option value="0">Al vencer</option><option value="5">5 minutos antes</option><option value="15">15 minutos antes</option><option value="30">30 minutos antes</option><option value="60">1 hora antes</option><option value="1440">1 día antes</option>
+              </select>
+            </div>
+          </div>
+          <p id="task-time-zone" class="notification-help"></p>
+          <label class="notification-check"><input type="checkbox" id="task-notifications" checked> Activar avisos para esta tarea</label>
         </div>
 
         <div class="modal-footer">
@@ -710,6 +728,29 @@
   <!-- =========================================================================
        6. SCRIPTS MODULARES
        ========================================================================= -->
+  <dialog id="notification-center" class="notification-dialog" aria-labelledby="notification-heading">
+    <div class="notification-heading"><div><span class="notification-eyebrow">TU ENFOQUE, A TIEMPO</span><h2 id="notification-heading">Notificaciones</h2></div><button type="button" id="notification-close" class="btn-close-modal" aria-label="Cerrar notificaciones">&times;</button></div>
+    <p id="notification-permission" class="notification-permission" role="status"></p>
+    <div class="notification-actions"><button type="button" id="notification-enable" class="btn btn-primary">Activar notificaciones</button><button type="button" id="notification-disable" class="btn btn-secondary">Desactivar push</button></div>
+    <p id="notification-sync" class="notification-help" role="status">Preferencias guardadas en este dispositivo.</p>
+    <details class="notification-settings"><summary>Configurar recordatorios</summary>
+      <form id="notification-settings-form">
+        <label class="notification-check"><input id="pref-enabled" type="checkbox"> Activar recordatorios</label>
+        <div class="form-row"><div class="form-group"><label for="pref-minutes">Anticipación predeterminada</label><select id="pref-minutes" class="form-select"><option value="0">Al vencer</option><option value="5">5 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option><option value="1440">1 día</option></select></div><div class="form-group"><label for="pref-daily-time">Hora del resumen diario</label><input type="time" id="pref-daily-time" class="form-input" required></div></div>
+        <label class="notification-check"><input id="pref-overdue" type="checkbox"> Avisar de tareas vencidas</label>
+        <label class="notification-check"><input id="pref-daily" type="checkbox"> Resumen de pendientes del día</label>
+        <label class="notification-check"><input id="pref-muted" type="checkbox"> Silenciar avisos del sistema (conservar el centro)</label>
+        <div class="notification-actions"><button class="btn btn-primary" type="submit">Guardar preferencias</button><button class="btn btn-secondary" id="notification-test" type="button">Prueba local</button><button class="btn btn-secondary" id="notification-push-test" type="button">Prueba push</button></div>
+        <p class="notification-help">Los avisos con la aplicación cerrada requieren suscripción push, conexión y programador activo. La entrega puede retrasarse.</p>
+      </form>
+    </details>
+    <div class="notification-actions"><button type="button" id="notification-read" class="btn-sm btn-outline">Marcar todas como leídas</button><button type="button" id="notification-clear" class="btn-sm btn-outline">Limpiar historial</button></div>
+    <h3 class="notification-section-title">Recientes</h3><div id="notification-list" class="notification-list"></div>
+    <h3 class="notification-section-title">Próximas a vencer · 24 horas</h3><div id="notification-upcoming" class="notification-list"></div>
+    <h3 class="notification-section-title">Vencidas</h3><div id="notification-overdue" class="notification-list"></div>
+  </dialog>
+  <script src="./js/notification-core.js"></script>
+  <script src="./js/notifications.js"></script>
   <script src="./js/api.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/sync.js"></script>

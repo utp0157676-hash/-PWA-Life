@@ -1,0 +1,9 @@
+# Minimal OpenSSL configuration for local EC key generation on Windows.
+# This file contains no keys or credentials.
+openssl_conf = openssl_init
+[openssl_init]
+providers = provider_sect
+[provider_sect]
+default = default_sect
+[default_sect]
+activate = 1

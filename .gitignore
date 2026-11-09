@@ -1,5 +1,8 @@
 # Dependencias y logs
 node_modules/
+vendor/
+composer.phar
+backend/config/push.local.php
 backend/config/database.local.php
 .env
 .env.*
@@ -19,6 +22,7 @@ secrets.json
 tmp/
 temp/
 test-results/
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

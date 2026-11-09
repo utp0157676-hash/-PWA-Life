@@ -140,3 +140,25 @@ Evidencias locales (excluidas de Git): `test-results/browser-results.json`, `pwa
 Reproducir navegador: `node scripts/verify-browser.mjs` con Chrome instalado y XAMPP activo; genera un perfil aislado bajo test-results y capturas nuevas. Requiere puerto de depuración 9229 libre. La instalación nativa (diálogo de instalación/standalone) y la persistencia después de reiniciar Apache/MySQL **no se ejecutaron**. La caída exclusiva de MySQL con Internet disponible se comprobó en el protocolo con dobles, no deteniendo el servicio real. Las capturas y ausencia de overflow no sustituyen una revisión manual completa de todos los modales y controles responsivos.
 
 Para migración, pulsa **Importar** en la barra inferior y selecciona el JSON exportado del origen anterior. Solo agrega IDs que no existan localmente; no reemplaza registros ni metadatos de sincronización. Omite tombstones del respaldo, conserva IDs activos y encola POST. Importarlo dos veces no duplica IDs locales. **Exportar** descarga ambos almacenes con sus metadatos como respaldo de inspección; la importación está diseñada para migrar registros activos, no para restaurar operaciones pendientes históricas. Conserva siempre el archivo original.
+## Sistema de notificaciones y Web Push (implementado)
+
+La versión actual conserva la arquitectura existente y agrega hora opcional de vencimiento, recordatorios locales, centro de notificaciones y Web Push. Una tarea que solo tiene `dueDate` sigue siendo una tarea de calendario: no se inventa una hora. Cuando se introduce hora, el navegador envía `dueAt` en UTC y `timeZone` IANA.
+
+El botón de campana muestra recientes, próximas (24 h), vencidas, lectura, acceso a la tarea y posposición de 10 minutos. Las preferencias incluyen activación global, anticipación, vencidas, resumen diario, hora y silencio. El permiso solo se solicita después de **Activar notificaciones**.
+
+`js/notification-core.js` mantiene eventos e IDs hash en IndexedDB. `sw.js` recibe `push`, valida que el evento corresponda a una tarea pendiente, muestra `showNotification()` una sola vez y maneja `notificationclick`. El backend almacena dispositivos, suscripciones, recordatorios programados y logs. El alcance actual se limita a la máquina local porque no existe autenticación; antes de publicar se requiere autenticación y autorización por usuario.
+
+La librería `minishlink/web-push` 10.1.0 se instala con Composer y requiere PHP 8.2+, cURL y OpenSSL. `backend/config/push.local.php` contiene la clave privada VAPID y está excluido de Git. `/api/notifications/config` solo devuelve la pública. La migración `database/migrations/002_notifications.sql` es aditiva y se ejecuta mediante `scripts/migrate-notifications.php`, con bloqueo MySQL y comprobación de conteos.
+
+Para instalar:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-xampp.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\xampp\htdocs\PWA-Life\scripts\setup-notifications.ps1
+```
+
+La tarea `PWA-Life-Reminders` ejecuta `run-reminders.ps1` cada minuto, con instancias concurrentes ignoradas. El worker CLI planifica y envía hasta 100 eventos, registra resultados, aplica backoff y desactiva suscripciones expiradas. Comprobar con `Get-ScheduledTask -TaskName PWA-Life-Reminders` y `Get-ScheduledTaskInfo -TaskName PWA-Life-Reminders`. HTTP 429 de `/api/notifications/test` es el enfriamiento deliberado de un minuto y no debe eliminarse.
+
+En Chrome: abre `http://localhost/PWA-Life/`, campana, **Activar notificaciones**, acepta permiso, guarda preferencias y crea una tarea con hora futura. **Prueba local** verifica la aplicación abierta; **Prueba push** encola el envío para el programador. Para probar con la pestaña cerrada, deja Apache, MySQL, la tarea programada y conectividad activos; el Service Worker puede recibir el push sin página abierta, aunque Windows, Chrome y el proveedor pueden retrasarlo. El endpoint local requiere backend encendido para sincronizar y encolar. iOS/iPadOS necesita 16.4+ y añadir la PWA a pantalla de inicio; producción requiere HTTPS.
+
+Resultados de esta sesión: XAMPP actualizado, `/api/health` correcto, migración aditiva conservó los registros existentes (los conteos actuales incluyen datos de prueba y tombstones), claves VAPID locales generadas, tarea programada en estado Ready y wrapper oculto con `logs/reminders.log` ignorado por Git. Pasaron 25 pruebas Node, modelo PHP, sintaxis PHP/JS/SW y 30 pruebas HTTP de notificaciones. Chrome headless comprobó Service Worker, IndexedDB, responsividad y una notificación local real con permiso concedido. En la instalación XAMPP se verificó una suscripción activa: el worker obtuvo cinco respuestas `push_service_accepted` HTTP 201 y cada evento registró `received_at`, evidencia de entrega al Service Worker. La aparición visual en Windows depende además de los permisos de Chrome y de la configuración de notificaciones del sistema; debe confirmarse manualmente en la sesión instalada.

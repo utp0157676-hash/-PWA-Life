@@ -54,7 +54,9 @@ final class RecordController {
                 $data = Validator::record($type, $body, $method === 'PATCH');
             }
         }
+        if ($type === 'tasks' && $method !== 'DELETE') $data = TaskSchedule::validate($data, $existing);
         $result = ['data'=>$model->write($id, $data, $method === 'POST')];
+        if ($type === 'tasks') ReminderService::reconcileAll($this->db);
         $status = $method === 'POST' ? 201 : 200;
         $s = $this->db->prepare('UPDATE sync_operations SET response_json = ?, status_code = ? WHERE id = ?');
         $s->execute([json_encode($result, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $status, $token]);

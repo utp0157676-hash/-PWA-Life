@@ -6,14 +6,18 @@ final class Record {
         if (!in_array($table, ['tasks','notes'], true)) throw new LogicException('Tabla inválida.');
         $this->map = ['id'=>'id','title'=>'title','createdAt'=>'created_at','updatedAt'=>'updated_at','deletedAt'=>'deleted_at','revision'=>'revision'] +
             ($table === 'tasks' ? ['description'=>'description','priority'=>'priority','dueDate'=>'due_date','completed'=>'completed'] : ['content'=>'content','category'=>'category','colorTag'=>'color_tag']);
+        if ($table === 'tasks') $this->map += ['dueTime'=>'due_time','dueAt'=>'due_at','timeZone'=>'time_zone','reminderMinutes'=>'reminder_minutes','notificationsEnabled'=>'notifications_enabled','snoozedUntil'=>'snoozed_until'];
     }
     private function decode(array $row): array {
         $out = [];
         foreach ($this->map as $key => $column) {
             $v = $row[$column];
             if ($key === 'completed') $v = (bool)$v;
+            if ($key === 'notificationsEnabled') $v = (bool)$v;
+            if ($key === 'reminderMinutes' && $v !== null) $v = (int)$v;
+            if ($key === 'dueTime' && $v !== null) $v = substr($v, 0, 5);
             if ($key === 'revision') $v = (int)$v;
-            if (in_array($key, ['createdAt','updatedAt','deletedAt'], true) && $v !== null) $v = str_replace(' ', 'T', $v) . 'Z';
+            if (in_array($key, ['createdAt','updatedAt','deletedAt','dueAt','snoozedUntil'], true) && $v !== null) $v = str_replace(' ', 'T', $v) . 'Z';
             $out[$key] = $v;
         }
         return $out;

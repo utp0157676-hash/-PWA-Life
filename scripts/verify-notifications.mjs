@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {randomUUID,randomBytes} from 'node:crypto';
+const base=process.env.PWA_TEST_URL||'http://localhost/PWA-Life/';let checks=0;
+const device={id:randomUUID(),token:randomBytes(32).toString('hex')};
+async function call(path,method='GET',data,status=200,identity=device){
+ const r=await fetch(new URL('api/'+path,base),{method,headers:{'Content-Type':'application/json','X-PWA-Request':'1','Idempotency-Key':randomUUID(),'X-Device-Id':identity.id,'X-Device-Token':identity.token},...(data?{body:JSON.stringify(data)}:{})});
+ const json=await r.json();assert.equal(r.status,status,JSON.stringify(json));checks++;return json.data;
+}
+await call('notifications/device','POST',{});
+await call('notifications/preferences','GET',undefined,401,{...device,token:'0'.repeat(64)});
+await call('notifications/subscription','DELETE',{},401,{...device,token:'1'.repeat(64)});
+const prefs={enabled:true,minutes:5,overdue:true,daily:false,dailyTime:'09:00',muted:false,timeZone:'UTC'};
+await call('notifications/preferences','PUT',{version:1,preferences:prefs});
+assert.equal((await call('notifications/preferences')).preferences.minutes,5);
+await call('notifications/preferences','PUT',{version:1,preferences:prefs});
+await call('notifications/subscription','PUT',{endpoint:'https://127.0.0.1/admin',keys:{p256dh:'a',auth:'a'}},422);
+await call('notifications/subscription','PUT',{endpoint:'https://fcm.googleapis.com.evil.test/send',keys:{}},422);
+assert.equal((await call('notifications/subscription')).active,false);
+const at=new Date(Math.floor((Date.now()+3600000)/60000)*60000).toISOString().replace('.000Z','Z');
+const task={id:'test-notify-'+randomUUID(),title:'Recordatorio real API',dueDate:at.slice(0,10),dueTime:at.slice(11,16),dueAt:at,timeZone:'UTC',reminderMinutes:5,notificationsEnabled:true};
+let row=await call('tasks','POST',task,201);
+let list=(await call('notifications/reminders')).filter(r=>r.task_id===task.id);
+assert.equal(list.length,2);assert.equal(Date.parse(list.find(r=>r.kind==='due').event.at),Date.parse(at)-300000);
+const first=list.find(r=>r.kind==='due').event_id;
+row=await call('tasks/'+task.id,'PATCH',{reminderMinutes:30,revision:row.revision});
+list=(await call('notifications/reminders')).filter(r=>r.task_id===task.id);
+assert.equal(list.length,2);assert.notEqual(list.find(r=>r.kind==='due').event_id,first);assert.equal(Date.parse(list.find(r=>r.kind==='due').event.at),Date.parse(at)-1800000);
+await call('tasks/'+task.id,'PATCH',{dueAt:'2026-02-30T10:00:00Z',revision:row.revision},422);
+row=await call('tasks/'+task.id,'PATCH',{completed:true,revision:row.revision});
+assert.equal((await call('notifications/reminders')).filter(r=>r.task_id===task.id).length,0);
+row=await call('tasks/'+task.id,'PATCH',{completed:false,revision:row.revision});
+row=await call('tasks/'+task.id,'DELETE',{revision:row.revision});
+assert.equal((await call('notifications/reminders')).filter(r=>r.task_id===task.id).length,0);
+const plain=await call('tasks','POST',{id:'test-date-'+randomUUID(),title:'Sin hora',dueDate:at.slice(0,10)},201);
+assert.equal(plain.dueAt,null);assert.equal(plain.dueTime,null);
+await call('tasks/'+plain.id,'DELETE',{revision:plain.revision});
+await call('notifications/preferences','PUT',{version:2,preferences:{...prefs,enabled:false}});
+await call('notifications/preferences','PUT',{version:1,preferences:prefs});
+assert.equal((await call('notifications/preferences')).preferences.enabled,false);
+await call('notifications/process','POST',{},404);
+for(const path of ['backend/config/push.local.php','backend/config/windows-ca.pem','vendor/autoload.php','composer.lock','scripts/process-reminders.php']){const r=await fetch(new URL(path,base));assert.equal(r.status,403,path);checks++;}
+console.log(`${checks} comprobaciones HTTP de recordatorios aprobadas: horarios, reprogramación, cancelación, preferencias, aislamiento de dispositivo y archivos privados.`);

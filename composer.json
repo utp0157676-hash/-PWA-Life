@@ -1,0 +1,7 @@
+{
+  "name": "pwa-life/notifications",
+  "description": "Recordatorios Web Push de PWA Life",
+  "type": "project",
+  "require": { "php": "^8.2", "minishlink/web-push": "^10.0", "guzzlehttp/guzzle": "^7.9" },
+  "config": { "allow-plugins": { "php-http/discovery": false }, "sort-packages": true }
+}

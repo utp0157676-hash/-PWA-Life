@@ -1,9 +1,9 @@
 Options -Indexes
 DirectoryIndex index.html
 RewriteEngine On
-RewriteRule ^(?:\.git|\.codex|\.agents|database|test|scripts)(?:/|$) - [F,L]
+RewriteRule ^(?:\.git|\.codex|\.agents|database|test|scripts|vendor|test-results|logs)(?:/|$) - [F,L]
 RewriteRule ^backend/(?!index\.php$) - [F,L]
 RewriteRule ^api(?:/(.*))?$ backend/index.php?route=$1 [QSA,L]
-<FilesMatch "(^\.|\.sql$|\.log$|\.local\.php$|^server\.js$|^package.*\.json$)">
+<FilesMatch "(^\.|\.sql$|\.log$|\.local\.php$|^composer\.(json|lock|phar)$|^server\.js$|^package.*\.json$)">
  Require all denied
 </FilesMatch>

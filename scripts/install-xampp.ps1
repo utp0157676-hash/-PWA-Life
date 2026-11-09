@@ -2,21 +2,23 @@ param([string]$XamppRoot = 'C:\xampp')
 $ErrorActionPreference = 'Stop'
 $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $xamppPath = [IO.Path]::GetFullPath($XamppRoot)
+$php = Join-Path $xamppPath 'php\php.exe'
 $destination = Join-Path $xamppPath 'htdocs\PWA-Life'
 if (!(Test-Path (Join-Path $xamppPath 'php\php.exe'))) { throw 'No se encontró PHP de XAMPP.' }
 # Copy only application files; preserve any local connection configuration and data.
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
-foreach ($folder in @('backend','database','scripts','js','css','icons','test')) {
+foreach ($folder in @('backend','database','scripts','js','css','icons','test','vendor')) {
     $sourceFolder = Join-Path $sourceRoot $folder
+    if (!(Test-Path -LiteralPath $sourceFolder)) { continue }
     foreach ($file in Get-ChildItem -LiteralPath $sourceFolder -File -Recurse -Force) {
-        if ($file.Name -eq 'database.local.php') { continue }
+        if ($file.Name -like '*.local.php' -or $file.Extension -eq '.pem') { continue }
         $relative = $file.FullName.Substring($sourceRoot.Length + 1)
         $target = Join-Path $destination $relative
         New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
         Copy-Item -LiteralPath $file.FullName -Destination $target -Force
     }
 }
-foreach ($file in @('index.html','manifest.json','sw.js','.htaccess','README.md','DOCUMENTACION.md')) {
+foreach ($file in @('index.html','manifest.json','sw.js','.htaccess','README.md','DOCUMENTACION.md','composer.json','composer.lock')) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination (Join-Path $destination $file) -Force
 }
 $localConfig = Join-Path $destination 'backend\config\database.local.php'
@@ -32,6 +34,8 @@ if (!(Get-Process httpd -ErrorAction SilentlyContinue)) {
 Start-Sleep -Seconds 3
 & (Join-Path $xamppPath 'php\php.exe') (Join-Path $destination 'scripts\import-database.php')
 if ($LASTEXITCODE -ne 0) { throw 'La importación falló. Configura database.local.php y vuelve a ejecutar.' }
+& $php (Join-Path $destination 'scripts\migrate-notifications.php')
+if ($LASTEXITCODE -ne 0) { throw 'Falló la migración de notificaciones.' }
 $health = Invoke-RestMethod 'http://localhost/PWA-Life/api/health'
 if ($health.data.status -ne 'ok') { throw 'La API no confirmó la conexión.' }
 Write-Output 'Instalación verificada: http://localhost/PWA-Life/ | API y MySQL disponibles.'

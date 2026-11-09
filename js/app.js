@@ -98,6 +98,7 @@ const App = (() => {
       } catch (error) { showToast(error.message, 'error'); }
     });
     SyncEngine.start();
+    await NotificationUI.init();
 
     console.log('[App] PWA Life inicializada y lista.');
   }
@@ -173,9 +174,13 @@ const App = (() => {
   }
 
   function _handleHashChange() {
-    const rawHash = window.location.hash.replace('#', '').trim();
+    const rawHash = window.location.hash.replace('#', '').trim().split('?')[0];
     if (['dashboard', 'tasks', 'notes', 'pwa-info'].includes(rawHash)) {
       navigateTo(rawHash);
+      if (rawHash === 'tasks') {
+        const taskId = new URLSearchParams(window.location.hash.split('?')[1] || '').get('task');
+        if (taskId) TaskManager.editTask(taskId);
+      }
     } else {
       navigateTo('dashboard');
     }

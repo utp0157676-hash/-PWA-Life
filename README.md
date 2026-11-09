@@ -76,3 +76,8 @@ La sincronización necesita la aplicación abierta; no se garantiza trabajo con 
 ## Resultado verificado
 
 Instalado y conectado realmente a XAMPP/MySQL. Pasaron 16 pruebas unitarias y 38 comprobaciones HTTP. Chrome verificó IndexedDB, recarga offline, sincronización y registros visibles en phpMyAdmin. Evidencias en `test-results/` (no versionadas). Pendientes manuales: instalación nativa, reinicio de servicios y caída exclusiva de MySQL. Consulta el detalle y límites de estas pruebas en DOCUMENTACION.md, sección 11.
+## Notificaciones Web Push
+
+La implementación conserva tareas, notas, IndexedDB y sincronización. Añade hora opcional (UTC + zona IANA), recordatorios 0/5/15/30/60/1440 minutos, vencidas, resumen diario, posposición, centro de notificaciones y Web Push. El permiso se solicita solamente desde **Activar notificaciones**.
+
+Ejecuta `scripts/install-xampp.ps1` y después `C:\xampp\htdocs\PWA-Life\scripts\setup-notifications.ps1`. La clave privada VAPID queda en `backend/config/push.local.php` y no se versiona. Comprueba `Get-ScheduledTask -TaskName PWA-Life-Reminders`, abre la campana, activa Web Push y usa **Prueba local** o **Prueba push**. El endpoint de prueba tiene enfriamiento de un minuto; HTTP 429 es esperado si se repite demasiado pronto. Para avisos con la pestaña cerrada deben permanecer activos Apache/MySQL, el Programador y la conectividad push; la entrega requiere una suscripción válida y puede retrasarse. No se hizo commit ni push.

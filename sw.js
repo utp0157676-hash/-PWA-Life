@@ -26,7 +26,8 @@
  */
 
 // Nombre y versión de la caché. Al cambiar esta versión, se invalida la caché previa.
-const CACHE_VERSION = 'v2.0.0';
+importScripts('./js/notification-core.js');
+const CACHE_VERSION = 'v3.0.0';
 const CACHE_PREFIX = `pwa-life-${self.location.pathname.replace(/[^a-z0-9]/gi, '-')}-`;
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -43,6 +44,8 @@ const ASSETS_TO_CACHE = [
   './js/storage.js',
   './js/api.js',
   './js/sync.js',
+  './js/notification-core.js',
+  './js/notifications.js',
   './js/pwa.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -231,4 +234,45 @@ self.addEventListener('message', (event) => {
       });
     }
   }
+});
+
+// Push wakes the SW independently of any open page. No SW timers are used.
+self.addEventListener('push', event => {
+  event.waitUntil((async () => {
+    if (!event.data) return;
+    let payload;
+    try { payload = event.data.json(); } catch { return; }
+    payload.source = 'push';
+    await NotificationCore.deliver(payload, self.registration);
+    for (const client of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) client.postMessage({ type: 'NOTIFICATIONS_CHANGED' });
+    // A receipt indicates processing, not guaranteed OS display or human reading.
+    const s = await NotificationCore.state();
+    try {
+      await fetch(new URL('./api/notifications/received', self.registration.scope), {
+        method: 'POST', cache: 'no-store', headers: { 'Content-Type':'application/json', 'X-PWA-Request':'1', 'X-Device-Id':s.deviceId, 'X-Device-Token':s.token }, body: JSON.stringify({ ids:[payload.id] })
+      });
+    } catch { /* receipt can be retried by the page after reconnecting */ }
+  })());
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const { eventId, taskId } = event.notification.data || {};
+    if (eventId) await NotificationCore.update('events', eventId, row => ({ ...row, read:true }));
+    const url = new URL('./index.html', self.registration.scope);
+    url.hash = taskId ? 'tasks?task=' + encodeURIComponent(taskId) : 'tasks';
+    for (const client of await self.clients.matchAll({ type:'window', includeUncontrolled:true })) {
+      if (client.url.startsWith(self.registration.scope)) {
+        await client.focus();
+        if (taskId) client.postMessage({ type:'OPEN_TASK', taskId });
+        return;
+      }
+    }
+    await self.clients.openWindow(url.href);
+  })());
+});
+self.addEventListener('pushsubscriptionchange', event => {
+  // Subscription refresh needs browser cooperation. Persist intent; the next
+  // page session re-registers an existing subscription or asks the user to reconnect.
+  event.waitUntil((async()=>{await NotificationCore.state();await NotificationCore.update('state','device', row => ({ ...row, subscriptionHash:null }));})());
 });
